@@ -14,4 +14,7 @@ FROM registry.fedoraproject.org/fedora:38
 COPY --from=builder /sdv/target/release/chariott /usr/local/bin/chariott
 COPY --from=builder /sdv/target/release/chariott.d /etc/
 
+# exposing ports
+EXPOSE 4243/tcp
+
 ENTRYPOINT ["chariott"]
