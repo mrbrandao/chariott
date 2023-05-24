@@ -1,0 +1,20 @@
+# Containerfile for building Eclipse Chariott kv-app runtime container
+FROM registry.fedoraproject.org/fedora:38 as builder
+ARG VERSION="56fac8c49eb19bc96dfab1ca10a6bd9a5a1985e4"
+RUN dnf -y install rust cargo unzip cmake protobuf-devel
+ADD https://github.com/eclipse-chariott/chariott/archive/${VERSION}.zip /tmp/chariott.zip
+RUN unzip /tmp/chariott.zip -d /tmp;mv /tmp/chariott-${VERSION} /sdv
+WORKDIR /sdv
+RUN cargo build -p kv-app
+
+# Chariott kv-app Final Fedora Image
+FROM registry.fedoraproject.org/fedora:38
+
+# Copy our build
+COPY --from=builder /sdv/target/debug/kv-app /usr/local/bin/kv-app
+COPY --from=builder /sdv/target/debug/kv-app.d /etc/
+
+# exposing ports
+EXPOSE 50064/tcp
+
+ENTRYPOINT ["kv-app"]
