@@ -1,0 +1,37 @@
+# Containerfile for building Eclipse Chariott runtime container
+FROM registry.fedoraproject.org/fedora:38 as builder
+ENV VERSION="56fac8c49eb19bc96dfab1ca10a6bd9a5a1985e4"
+RUN dnf -y install rust cargo unzip cmake protobuf-devel
+ADD https://github.com/eclipse-chariott/chariott/archive/${VERSION}.zip /tmp/chariott.zip
+RUN unzip /tmp/chariott.zip -d /tmp;mv /tmp/chariott-${VERSION} /sdv
+WORKDIR /sdv
+RUN cargo build --release 
+RUN cargo build -p kv-app
+
+# Chariott Final Fedora Image
+FROM registry.fedoraproject.org/fedora:38
+
+# Chariott user id
+ARG CHARIOTT_UID=10001
+
+# unprivileged identity to run Chariott as
+RUN useradd \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${CHARIOTT_UID}" \
+    chariott \
+  && usermod -L chariott
+RUN dnf -y install grpcurl; dnf clean all
+
+# Copy our build
+COPY --from=builder /sdv/target/release/chariott /usr/local/bin/chariott
+COPY --from=builder /sdv/target/release/chariott.d /etc/
+COPY --from=builder /sdv/target/debug/kv-app /usr/local/bin/kv-app
+COPY --from=builder /sdv/target/debug/kv-app.d /etc/
+RUN chown -R chariott:chariott /etc/chariott.d /etc/kv-app.d
+
+# Use the unprivileged chariott user during execution.
+USER chariott:chariott
+
+CMD ["chariott"]
