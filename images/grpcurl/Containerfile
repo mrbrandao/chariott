@@ -1,0 +1,5 @@
+# Containerfile for building an grpcurl toolbox
+FROM registry.fedoraproject.org/fedora:38
+RUN dnf -y install grpcurl; dnf clean all
+ENTRYPOINT ["sleep"]
+CMD ["infinity"]
