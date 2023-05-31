@@ -12,4 +12,4 @@ COPY --from=builder /sdv/proto /proto
 RUN dnf -y install grpcurl; dnf clean all
 COPY entrypoint.py /usr/local/bin/entrypoint.py
 RUN chmod +x /usr/local/bin/entrypoint.py
-ENTRYPOINT ["/usr/local/bin/entrypoint.py"]
+ENTRYPOINT ["/usr/bin/python3", "-u", "/usr/local/bin/entrypoint.py"]
